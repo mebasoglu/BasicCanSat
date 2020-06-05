@@ -1,3 +1,5 @@
+#include "SdFat.h"
+
 #include <ADXL345.h>
 #include <Wire.h>
 
@@ -26,6 +28,11 @@ float z_acc;
 #define SEALEVELPRESSURE_HPA (1015)
 Adafruit_BME280 bme;
 
+const uint8_t chipSelect = PB12;
+#define FILE_BASE_NAME "Data"
+SdFat sd;
+SdFile file;
+uint32_t logTime;
 
 void setup() {
   Serial.begin(9600);
@@ -45,6 +52,20 @@ void setup() {
     Serial.println("BME280 didn't started.");
   }
   //-------------------------------------------------------------------------------
+
+  char alt[] = "Alt";
+  char xacc[] = "XAcc";
+  char yacc[] = "YAcc";
+  char zacc[] = "ZAcc";
+  sd.begin(chipSelect, SD_SCK_MHZ(50))
+  //file.open(fileName, O_WRONLY | O_CREAT | O_EXCL)
+
+  // Start on a multiple of the sample interval.
+  logTime = micros()/(1000UL*SAMPLE_INTERVAL_MS) + 1;
+  logTime *= 1000UL*SAMPLE_INTERVAL_MS;
+
+
+
 
   //-------------------------------------------------------------------------------
 }
