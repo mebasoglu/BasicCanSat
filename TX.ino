@@ -1,4 +1,4 @@
-#include "SdFat.h"
+//#include "SdFat.h"
 
 #include <ADXL345.h>
 #include <Wire.h>
@@ -28,11 +28,16 @@ float z_acc;
 #define SEALEVELPRESSURE_HPA (1015)
 Adafruit_BME280 bme;
 
-const uint8_t chipSelect = PB12;
-#define FILE_BASE_NAME "Data"
-SdFat sd;
-SdFile file;
-uint32_t logTime;
+//const uint8_t chipSelect = PB12;
+//#define FILE_BASE_NAME "Data"
+//SdFat sd;
+//SdFile file;
+//uint32_t logTime;
+
+#define gpsPort Serial1
+
+int endCounter = 0;
+bool gpsState = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -57,39 +62,57 @@ void setup() {
   char xacc[] = "XAcc";
   char yacc[] = "YAcc";
   char zacc[] = "ZAcc";
-  sd.begin(chipSelect, SD_SCK_MHZ(50))
+  //sd.begin(chipSelect, SD_SCK_MHZ(50))
   //file.open(fileName, O_WRONLY | O_CREAT | O_EXCL)
 
   // Start on a multiple of the sample interval.
-  logTime = micros()/(1000UL*SAMPLE_INTERVAL_MS) + 1;
-  logTime *= 1000UL*SAMPLE_INTERVAL_MS;
+  //logTime = micros()/(1000UL*SAMPLE_INTERVAL_MS) + 1;
+  //logTime *= 1000UL*SAMPLE_INTERVAL_MS;
 
 
 
 
   //-------------------------------------------------------------------------------
+  gpsPort.begin(9600);
 }
 void loop() {
 
-  Vector norm = accelerometer.readNormalize();
-  alt = bme.readAltitude(SEALEVELPRESSURE_HPA);
-  x_acc = norm.XAxis;
-  y_acc = norm.YAxis;
-  z_acc = norm.ZAxis;
-
-  String SensorData = String(alt) + "," + String(x_acc) + "," + String(y_acc) + "," + String(z_acc);
-  char SensorDataRF[32];
-  SensorData.toCharArray(SensorDataRF, 31);
-  Serial.println("Altitude, X-Acc, Y-Acc, Z-Acc");
-  Serial.println(SensorDataRF);
-  if (radio.print(SensorDataRF)) {
-    Serial.println("Radio transfered data.");
+  while (gpsPort.available() > 0) {
+    char dataraw = gpsPort.read();
+    int dataraww = gpsPort.read();
+    
+    int endline = 36;
+    if(dataraw == endline){
+      Serial.write("d");
+      endCounter++;
+    }
+    Serial.write(dataraw);
+    Serial.write(dataraww);
   }
-  else {
-    Serial.println("Data didn't transferred.");
-  }
-  radio.flush();
 
+    Serial.println(endCounter);
+
+  if (gpsState) {
+
+
+    Vector norm = accelerometer.readNormalize();
+    alt = bme.readAltitude(SEALEVELPRESSURE_HPA);
+    x_acc = norm.XAxis;
+    y_acc = norm.YAxis;
+    z_acc = norm.ZAxis;
+
+    String SensorData = String(alt) + "," + String(x_acc) + "," + String(y_acc) + "," + String(z_acc);
+    char SensorDataRF[32];
+    SensorData.toCharArray(SensorDataRF, 31);
+
+    Serial.println("Altitude, X-Acc, Y-Acc, Z-Acc");
+    Serial.println(SensorDataRF);
+    if (radio.print(SensorDataRF)) {
+      Serial.println("Radio transfered data.");
+    }
+
+    radio.flush();
+
+  }
   delay(500);
-
 }
