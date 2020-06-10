@@ -79,15 +79,13 @@ void loop() {
 
   while (gpsPort.available() > 0) {
     char dataraw = gpsPort.read();
-    int dataraww = gpsPort.read();
     
-    int endline = 36;
+    int endline = 13;
     if(dataraw == endline){
       Serial.write("d");
       endCounter++;
     }
     Serial.write(dataraw);
-    Serial.write(dataraww);
   }
 
     Serial.println(endCounter);
